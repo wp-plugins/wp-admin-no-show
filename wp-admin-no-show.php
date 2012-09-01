@@ -3,7 +3,7 @@
 Plugin Name: WP Admin No Show
 Plugin URI: http://www.dougsparling.org
 Description: Efectively blocks admin portion of site for selected user roles. Any attempt to manually navigate to wp-admin section of site and user will be redirected to selected site page. Hides admin bar.
-Version: 1.0.0
+Version: 1.1.0
 Author: Doug Sparling
 Author URI: http://www.dougsparling.org
 License: MIT License - http://www.opensource.org/licenses/mit-license.php
@@ -29,18 +29,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-// Plugin config - user role for level you want to hide everything from
-// roles: administrator, editor, author, contributor, subscriber
-$wp_admin_no_show_wp_user_role = 'subscriber';
-
 /**
  * Redirect users on any wp-admin pages
  */
 function wp_admin_no_show_admin_redirect() {
     global $wp_admin_no_show_wp_user_role;
+    $disable = false;
 
-    if ( current_user_can( $wp_admin_no_show_wp_user_role ) ) {
+    $blacklist_roles = get_option( 'wp_admin_no_show_blacklist_roles', array() );
+    if ( false === $disable && !empty( $blacklist_roles ) ) {
+        if ( !is_array( $blacklist_roles ) )
+            $blacklist_roles = array( $blacklist_roles );
+        foreach ( $blacklist_roles as $role ) {
+            if (preg_match("/administrator/i", $role )) {
+              break;
+            } else if ( current_user_can( $role ) ) {
+                $disable = true;
+            }
+        }
+    }
 
+    if ( false !== $disable ) {
         $redirect = get_bloginfo('url');
 
         if( is_admin() ) {
@@ -52,6 +61,7 @@ function wp_admin_no_show_admin_redirect() {
                 exit();
             }
         }
+
     }
 }
 add_action( 'admin_head', 'wp_admin_no_show_admin_redirect', 0 );
@@ -63,11 +73,16 @@ function wp_admin_no_show_admin_bar_disable() {
     global $wp_admin_no_show_wp_user_role;
     $disable = false;
 
-     if ( !current_user_can( $wp_admin_no_show_wp_user_role ) ) {
-         return;
-     }
-
-    $disable = true;
+    $blacklist_roles = get_option( 'wp_admin_no_show_blacklist_roles', array() );
+    if ( false === $disable && !empty( $blacklist_roles ) ) {
+        if ( !is_array( $blacklist_roles ) )
+            $blacklist_roles = array( $blacklist_roles );
+        foreach ( $blacklist_roles as $role ) {
+            if ( current_user_can( $role ) ) {
+                $disable = true;
+            }
+        }
+    }
 
     if ( false !== $disable ) {
         add_filter( 'show_admin_bar', '__return_false' );
@@ -75,5 +90,60 @@ function wp_admin_no_show_admin_bar_disable() {
     }
 }
 add_action( 'init', 'wp_admin_no_show_admin_bar_disable' );
+
+
+function wp_admin_no_show_create_menu() {
+    add_options_page( __( 'WP Admin No Show', 'wp-admin-no-show' ), __( 'WP Admin No Show', 'wp-admin-no-show' ), 'administrator', __FILE__, 'wp_admin_no_show_settings_page' );
+    add_action( 'admin_init', 'wp_admin_no_show_register_settings' );
+}
+add_action( 'admin_menu', 'wp_admin_no_show_create_menu' );
+
+function wp_admin_no_show_register_settings() {
+    register_setting( 'wp-admin-no-show-settings-group', 'wp_admin_no_show_blacklist_roles' );
+}
+
+function wp_admin_no_show_settings_page() {
+    global $wp_roles;
+    if ( !isset( $wp_roles ) )
+        $wp_roles = new WP_Roles();
+    $roles = $wp_roles->get_names();
+    if ( isset( $_GET['settings-updated'] ) ) {
+?>
+    <div id="message" class="updated"><p><?php _e( 'Options saved', 'wp-admin-no-show' ); ?></p></div>
+<?php
+    }
+?>
+<div class="wrap">
+    <h2><?php _e( 'WP Admin No Show', 'wp-admin-no-show' ); ?></h2>
+    <form method="post" action="options.php">
+        <?php settings_fields( 'wp-admin-no-show-settings-group' ); ?>
+        <?php do_settings_sections( 'wp-admin-no-show-settings-group' ); ?>
+        <table class="form-table">
+            <tr valign="top">
+                <th scope="row"><?php _e( 'Roles Blacklist', 'wp-admin-no-show' ); ?></th>
+                <td>
+                    <select name="wp_admin_no_show_blacklist_roles[]" size="10" style="height:auto;" MULTIPLE>
+<?php
+    $blacklist_roles = get_option( 'wp_admin_no_show_blacklist_roles', array() );
+    if ( !is_array( $blacklist_roles ) )
+        $blacklist_roles = array( $blacklist_roles );
+    foreach ( $roles as $role => $name ) {
+?>
+                            <option value="<?php echo esc_attr( $role ); ?>"<?php echo ( in_array( $role, $blacklist_roles ) ? ' SELECTED' : '' ); ?>><?php echo $name; ?></option>
+<?php
+    }
+?>
+                    </select>
+                    <br/><em><?php _e( 'Block wp-admin pages and do not show the Admin Bar for Users with these Role(s)<br />CTRL + Click for multiple selections', 'admin-bar-disabler' ); ?></em>
+                </td>
+            </tr>
+        </table>
+        <p class="submit">
+            <input type="submit" class="button-primary" value="<?php _e( 'Save Changes', 'wp-admin-no-show' ) ?>"/>&nbsp;&nbsp;
+        </p>
+    </form>
+</div>
+<?php
+}
 
 ?>

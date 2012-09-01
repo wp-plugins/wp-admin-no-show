@@ -4,7 +4,7 @@ Donate link: http://www.dougsparling.org/
 Tags: admin bar, admin menu, dashboard, disable, remove, hide
 Requires at least: 3.1
 Tested up to: 3.4.1
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: MIT License
 License URI: http://www.opensource.org/licenses/mit-license.php
 
@@ -20,7 +20,7 @@ Users belonging to any of the other WordPress roles will continue to see and hav
 
 == Installation ==
 
-1. Upload `plugin-name.php` to the `/wp-content/plugins/` directory
+1. Upload `wp-admin-no-show.php` to the `/wp-content/plugins/` directory
 1. Activate the plugin through the 'Plugins' menu in WordPress
 
 == Frequently Asked Questions ==
@@ -31,14 +31,17 @@ WP Admin No Show was originally written for a WordPress site that used 3rd party
 
 == Screenshots ==
 
-1. No screenshots as WP Admin No Show has no UI.
+1. **WP Admin No Show Settings** - Set up per-site settings (blacklist user roles)
 
 == Changelog ==
 
-= 1.0 =
+= 1.1.0 =
+* Added admin page and ability to blacklist user role
+
+= 1.0.0 =
 * Initial release
 
 == Upgrade Notice ==
 
-= 1.0 =
+= 1.0.0 =
 Initial release.
