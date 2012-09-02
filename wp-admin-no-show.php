@@ -3,7 +3,7 @@
 Plugin Name: WP Admin No Show
 Plugin URI: http://www.dougsparling.org
 Description: Efectively blocks admin portion of site for selected user roles. Any attempt to manually navigate to wp-admin section of site and user will be redirected to selected site page. Hides admin bar.
-Version: 1.1.0
+Version: 1.2.0
 Author: Doug Sparling
 Author URI: http://www.dougsparling.org
 License: MIT License - http://www.opensource.org/licenses/mit-license.php
@@ -30,9 +30,23 @@ THE SOFTWARE.
 */
 
 /**
+ * Init on activation
+ */
+function wp_admin_no_show_activate() {
+    // Initialize on first activation
+    if ( '' == get_option( 'wp_admin_no_show_redirect_type' ) ) {
+        update_option( 'wp_admin_no_show_redirect_type', 'none' );
+    }
+}
+register_activation_hook( __FILE__, 'wp_admin_no_show_activate' );
+
+/**
  * Redirect users on any wp-admin pages
  */
 function wp_admin_no_show_admin_redirect() {
+    if ( 'none' == get_option( 'wp_admin_no_show_redirect_type' ) ) {
+        return;
+    }
     global $wp_admin_no_show_wp_user_role;
     $disable = false;
 
@@ -50,7 +64,12 @@ function wp_admin_no_show_admin_redirect() {
     }
 
     if ( false !== $disable ) {
-        $redirect = get_bloginfo('url');
+        if ( 'page' == get_option( 'wp_admin_no_show_redirect_type' ) ) {
+            $page_id = get_option( 'wp_admin_no_show_redirect_page' );
+            $redirect = get_permalink( $page_id );
+        } else {
+            $redirect = get_bloginfo( 'url' );
+        }
 
         if( is_admin() ) {
             if ( headers_sent() ) {
@@ -91,7 +110,9 @@ function wp_admin_no_show_admin_bar_disable() {
 }
 add_action( 'init', 'wp_admin_no_show_admin_bar_disable' );
 
-
+/**
+ * Create admin menu
+ */
 function wp_admin_no_show_create_menu() {
     add_options_page( __( 'WP Admin No Show', 'wp-admin-no-show' ), __( 'WP Admin No Show', 'wp-admin-no-show' ), 'administrator', __FILE__, 'wp_admin_no_show_settings_page' );
     add_action( 'admin_init', 'wp_admin_no_show_register_settings' );
@@ -100,8 +121,13 @@ add_action( 'admin_menu', 'wp_admin_no_show_create_menu' );
 
 function wp_admin_no_show_register_settings() {
     register_setting( 'wp-admin-no-show-settings-group', 'wp_admin_no_show_blacklist_roles' );
+    register_setting( 'wp-admin-no-show-settings-group', 'wp_admin_no_show_redirect_type' );
+    register_setting( 'wp-admin-no-show-settings-group', 'wp_admin_no_show_redirect_page' );
 }
 
+/**
+ * Admin settings page
+ */
 function wp_admin_no_show_settings_page() {
     global $wp_roles;
     if ( !isset( $wp_roles ) )
@@ -137,6 +163,54 @@ function wp_admin_no_show_settings_page() {
                     <br/><em><?php _e( 'Block wp-admin pages and do not show the Admin Bar for Users with these Role(s)<br />CTRL + Click for multiple selections', 'admin-bar-disabler' ); ?></em>
                 </td>
             </tr>
+
+            <?php if ( ! get_pages() ) : ?>
+            <tr>
+            <td><input name="wp_admin_no_show_redirect_type" type="hidden" value="front" /></td>
+            </tr>
+            <?php
+                // If no pages, then default to 'front' if not already set
+                if ( 'front' != get_option( 'wp_admin_no_show_redirect_type' ) ) :
+                    update_option( 'wp_admin_no_show_redirect_type', 'front' );
+                endif;
+
+            else :
+                // If pages and no redirect page set, then default to front
+                if ( 'page' == get_option( 'wp_admin_no_show_redirect_type' ) && ! get_option( 'wp_admin_no_show_redirect_page' ) )
+                    update_option( 'wp_admin_no_show_redirect_type', 'front' );
+            ?>
+
+            <tr valign="top">
+                <th scope="row"><?php _e( 'Redirect (wp-admin)' ); ?></th>
+                <td id="front-static-pages">
+                    <fieldset>
+                        <legend class="screen-reader-text"><span><?php _e( 'WP Admin No Show Redirect' ); ?></span></legend>
+                        <p>
+                            <label>
+                                <input name="wp_admin_no_show_redirect_type" type="radio" value="none" class="tog" <?php checked( 'none', get_option( 'wp_admin_no_show_redirect_type' ) ); ?> />
+                                <?php _e( 'No redirect' ); ?>
+                            </label>
+                        </p>
+                        <p>
+                            <label>
+                                <input name="wp_admin_no_show_redirect_type" type="radio" value="front" class="tog" <?php checked( 'front', get_option( 'wp_admin_no_show_redirect_type' ) ); ?> />
+                                <?php _e( 'Front page' ); ?>
+                            </label>
+                        </p>
+                        <p>
+                            <label>
+                                <input name="wp_admin_no_show_redirect_type" type="radio" value="page" class="tog" <?php checked( 'page', get_option( 'wp_admin_no_show_redirect_type' ) ); ?> />
+                                <?php printf( __( 'A <a href="%s">static page</a> (select below)' ), 'edit.php?post_type=page' ); ?>
+                            </label>
+                        </p>
+                        <ul>
+                            <li><label for="wp_admin_no_show_redirect_page"><?php printf( __( 'Redirect page: %s' ), wp_dropdown_pages( array( 'name' => 'wp_admin_no_show_redirect_page', 'echo' => 0, 'show_option_none' => __( '&mdash; Select &mdash;' ), 'option_none_value' => '0', 'selected' => get_option( 'wp_admin_no_show_redirect_page' ) ) ) ); ?></label></li>
+                        </ul>
+                    </fieldset>
+                </td>
+            </tr>
+            <?php endif; ?>
+
         </table>
         <p class="submit">
             <input type="submit" class="button-primary" value="<?php _e( 'Save Changes', 'wp-admin-no-show' ) ?>"/>&nbsp;&nbsp;
