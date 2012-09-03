@@ -3,7 +3,7 @@
 Plugin Name: WP Admin No Show
 Plugin URI: http://www.dougsparling.org
 Description: Efectively blocks admin portion of site for selected user roles. Any attempt to manually navigate to wp-admin section of site and user will be redirected to selected site page. Hides admin bar.
-Version: 1.2.0
+Version: 1.2.1
 Author: Doug Sparling
 Author URI: http://www.dougsparling.org
 License: MIT License - http://www.opensource.org/licenses/mit-license.php
@@ -106,6 +106,7 @@ function wp_admin_no_show_admin_bar_disable() {
     if ( false !== $disable ) {
         add_filter( 'show_admin_bar', '__return_false' );
         remove_action( 'personal_options', '_admin_bar_preferences' );
+        remove_action( 'wp_head', '_admin_bar_bump_cb' );
     }
 }
 add_action( 'init', 'wp_admin_no_show_admin_bar_disable' );
