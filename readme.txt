@@ -4,7 +4,7 @@ Donate link: http://www.dougsparling.org/
 Tags: admin bar, admin menu, dashboard, disable, remove, hide
 Requires at least: 3.1
 Tested up to: 3.4.1
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 License: MIT License
 License URI: http://www.opensource.org/licenses/mit-license.php
 
@@ -39,8 +39,11 @@ WP Admin No Show was originally written for a WordPress site that used 3rd party
 
 == Changelog ==
 
+= 1.2.3 =
+* Replaced multi-select dropdown with checkboxes.
+
 = 1.2.2 =
-* Updated dropdown multiselect to allow toggling of option items.
+* Updated multi-select dropdown to allow toggling of option items.
 
 = 1.2.1 =
 * Removed 28px white space in front end when admin bar is disabled.
