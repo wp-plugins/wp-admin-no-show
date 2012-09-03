@@ -3,7 +3,7 @@
 Plugin Name: WP Admin No Show
 Plugin URI: http://www.dougsparling.org
 Description: Efectively blocks admin portion of site for selected user roles. Any attempt to manually navigate to wp-admin section of site and user will be redirected to selected site page. Hides admin bar.
-Version: 1.2.1
+Version: 1.2.2
 Author: Doug Sparling
 Author URI: http://www.dougsparling.org
 License: MIT License - http://www.opensource.org/licenses/mit-license.php
@@ -134,12 +134,28 @@ function wp_admin_no_show_settings_page() {
     if ( !isset( $wp_roles ) )
         $wp_roles = new WP_Roles();
     $roles = $wp_roles->get_names();
-    if ( isset( $_GET['settings-updated'] ) ) {
 ?>
-    <div id="message" class="updated"><p><?php _e( 'Options saved', 'wp-admin-no-show' ); ?></p></div>
-<?php
+
+<script type="text/javascript">
+jQuery(document).ready(function(){
+
+jQuery("select[wp_admin_no_show_blacklist_roles[]] option").mousedown(function() {
+
+    var self = jQuery(this);
+
+    if (self.attr("selected")) {
+        self.removeAttr('selected');
+    } else {
+        self.attr("selected", "selected");
     }
-?>
+
+    return false;
+});
+
+});
+</script>
+
+
 <div class="wrap">
     <h2><?php _e( 'WP Admin No Show', 'wp-admin-no-show' ); ?></h2>
     <form method="post" action="options.php">
@@ -149,19 +165,19 @@ function wp_admin_no_show_settings_page() {
             <tr valign="top">
                 <th scope="row"><?php _e( 'Roles Blacklist', 'wp-admin-no-show' ); ?></th>
                 <td>
-                    <select name="wp_admin_no_show_blacklist_roles[]" size="10" style="height:auto;" MULTIPLE>
+                    <select name="wp_admin_no_show_blacklist_roles[]" size="10" style="height:auto;" multiple>
 <?php
     $blacklist_roles = get_option( 'wp_admin_no_show_blacklist_roles', array() );
     if ( !is_array( $blacklist_roles ) )
         $blacklist_roles = array( $blacklist_roles );
     foreach ( $roles as $role => $name ) {
 ?>
-                            <option value="<?php echo esc_attr( $role ); ?>"<?php echo ( in_array( $role, $blacklist_roles ) ? ' SELECTED' : '' ); ?>><?php echo $name; ?></option>
+                            <option value="<?php echo esc_attr( $role ); ?>"<?php echo ( in_array( $role, $blacklist_roles ) ? ' selected' : '' ); ?>><?php echo $name; ?></option>
 <?php
     }
 ?>
                     </select>
-                    <br/><em><?php _e( 'Block wp-admin pages and do not show the Admin Bar for Users with these Role(s)<br />CTRL + Click for multiple selections', 'admin-bar-disabler' ); ?></em>
+                    <br/><em><?php _e( 'Block wp-admin pages and do not show the Admin Bar for Users with these Role(s)', 'admin-bar-disabler' ); ?></em>
                 </td>
             </tr>
 
