@@ -3,7 +3,7 @@
 Plugin Name: WP Admin No Show
 Plugin URI: http://www.dougsparling.org
 Description: Efectively blocks admin portion of site for selected user roles. Any attempt to manually navigate to wp-admin section of site and user will be redirected to selected site page. Hides admin bar.
-Version: 1.2.3
+Version: 1.3.0
 Author: Doug Sparling
 Author URI: http://www.dougsparling.org
 License: MIT License - http://www.opensource.org/licenses/mit-license.php
@@ -44,19 +44,29 @@ register_activation_hook( __FILE__, 'wp_admin_no_show_activate' );
  * Redirect users on any wp-admin pages
  */
 function wp_admin_no_show_admin_redirect() {
+    // Whitelist multisite super admin
+    if(function_exists('is_multisite')) {
+        if( is_multisite() && is_super_admin() ) {
+            return;
+        }
+    }
+
     if ( 'none' == get_option( 'wp_admin_no_show_redirect_type' ) ) {
         return;
     }
+
     global $wp_admin_no_show_wp_user_role;
     $disable = false;
 
     $blacklist_roles = get_option( 'wp_admin_no_show_blacklist_roles', array() );
     if ( false === $disable && !empty( $blacklist_roles ) ) {
-        if ( !is_array( $blacklist_roles ) )
+        if ( !is_array( $blacklist_roles ) ) {
             $blacklist_roles = array( $blacklist_roles );
+        }
         foreach ( $blacklist_roles as $role ) {
             if (preg_match("/administrator/i", $role )) {
-              break;
+                // whitelist administrator for redirect
+                continue;
             } else if ( current_user_can( $role ) ) {
                 $disable = true;
             }
@@ -92,10 +102,18 @@ function wp_admin_no_show_admin_bar_disable() {
     global $wp_admin_no_show_wp_user_role;
     $disable = false;
 
+    // Whitelist multisite super admin
+    if(function_exists('is_multisite')) {
+        if( is_multisite() && is_super_admin() ) {
+            return;
+        }
+    }
+
     $blacklist_roles = get_option( 'wp_admin_no_show_blacklist_roles', array() );
     if ( false === $disable && !empty( $blacklist_roles ) ) {
-        if ( !is_array( $blacklist_roles ) )
+        if ( !is_array( $blacklist_roles ) ) {
             $blacklist_roles = array( $blacklist_roles );
+        }
         foreach ( $blacklist_roles as $role ) {
             if ( current_user_can( $role ) ) {
                 $disable = true;
@@ -131,8 +149,9 @@ function wp_admin_no_show_register_settings() {
  */
 function wp_admin_no_show_settings_page() {
     global $wp_roles;
-    if ( !isset( $wp_roles ) )
+    if ( !isset( $wp_roles ) ) {
         $wp_roles = new WP_Roles();
+    }
     $roles = $wp_roles->get_names();
 ?>
 
@@ -204,7 +223,8 @@ function wp_admin_no_show_settings_page() {
                         <ul>
                             <li><label for="wp_admin_no_show_redirect_page"><?php printf( __( 'Redirect page: %s' ), wp_dropdown_pages( array( 'name' => 'wp_admin_no_show_redirect_page', 'echo' => 0, 'show_option_none' => __( '&mdash; Select &mdash;' ), 'option_none_value' => '0', 'selected' => get_option( 'wp_admin_no_show_redirect_page' ) ) ) ); ?></label></li>
                         </ul>
-                        <em><?php _e( 'Redirect only applies to blacklisted roles.', 'wp-admin-no-show' ); ?></em>
+                        <em><?php _e( 'Redirect only applies to non-administrator blacklisted roles.<br />', 'wp-admin-no-show' ); ?></em>
+                        <em><?php _e( 'Multisite super admin is whitelisted.', 'wp-admin-no-show' ); ?></em>
                     </fieldset>
                 </td>
             </tr>
