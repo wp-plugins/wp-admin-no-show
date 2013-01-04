@@ -3,12 +3,12 @@
 Plugin Name: WP Admin No Show
 Plugin URI: http://www.dougsparling.org
 Description: Efectively blocks admin portion of site for selected user roles. Any attempt to manually navigate to wp-admin section of site and user will be redirected to selected site page. Hides admin bar.
-Version: 1.3.0
+Version: 1.4.0
 Author: Doug Sparling
 Author URI: http://www.dougsparling.org
 License: MIT License - http://www.opensource.org/licenses/mit-license.php
 
-Copyright (c) 2012 Doug Sparling
+Copyright (c) 2012-2013 Doug Sparling
 Based on WP Hide Dashboard plugin by Kim Parsell and Admin Bar Disabler plugin by Scott Kingsley Clark
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -170,6 +170,9 @@ function wp_admin_no_show_settings_page() {
                     if ( !is_array( $blacklist_roles ) )
                         $blacklist_roles = array( $blacklist_roles );
                     foreach ( $roles as $role => $name ) {
+                        if (preg_match("/administrator/i", $role )) {
+                            continue;
+                        }
                     ?>
 <input name="wp_admin_no_show_blacklist_roles[]" type="checkbox" id="<?php echo 'wp_admin_now_show_role_' . $role; ?>" value="<?php echo $role; ?>" <?php checked('1', in_array( $role, $blacklist_roles )); ?> />
 <label for="<?php echo 'wp_admin_now_show_role_' . $role; ?>"><?php _e($name); ?></label>
